@@ -1,79 +1,152 @@
 #include <SoftwareSerial.h>
 
-// Definir los pines de los LEDs
-const int ledPins[] = {2, 3, 4, 5, 6, 7, 8, 9}; // 8 LEDs (ajustar según la cantidad de LEDs que uses)
-const int numLeds = 8;
+// Definición de pines para los LEDs
+const int ledDO = 2;       // LED para DO
+const int ledRE = 3;       // LED para RE
+const int ledMI = 4;       // LED para MI
+const int ledFA = 5;       // LED para FA
+const int ledSOL = 6;      // LED para SOL
+const int ledLA = 7;       // LED para LA
+const int ledSI = 8;       // LED para SI
+const int ledDO_otro = 9;  // LED para DO
 
-// Definir pines para el sensor HC-SR04
-const int trigPin = 12;
-const int echoPin = 13;
+// Pines del sensor de distancia HC-SR04
+const int trigPin = 10;
+const int echoPin = 11;
 
-// Configurar la comunicación Bluetooth
-SoftwareSerial BTSerial(10, 11); // RX, TX (puedes ajustar los pines según tu configuración)
+// Configuración de Bluetooth
+SoftwareSerial bluetooth(12, 13);    // RX, TX del módulo HC-06
+bool ledsApagados = false;           // Estado de los LEDs
+const float UMBRAL_DISTANCIA = 5.0;  // Umbral de 5 cm para apagar LEDs
 
-// Variable para almacenar la distancia
-long duration, distance;
+String receivedData = "";  // Variable para almacenar datos recibidos
 
 void setup() {
-  // Iniciar los pines de los LEDs
-  for (int i = 0; i < numLeds; i++) {
-    pinMode(ledPins[i], OUTPUT);
-    digitalWrite(ledPins[i], LOW); // Asegurarse de que todos los LEDs estén apagados al inicio
-  }
+  // Inicializamos los pines de los LEDs
+  pinMode(ledDO, OUTPUT);
+  pinMode(ledRE, OUTPUT);
+  pinMode(ledMI, OUTPUT);
+  pinMode(ledFA, OUTPUT);
+  pinMode(ledSOL, OUTPUT);
+  pinMode(ledLA, OUTPUT);
+  pinMode(ledSI, OUTPUT);
+  pinMode(ledDO_otro, OUTPUT);
 
-  // Inicializar comunicación serial y Bluetooth
-  Serial.begin(9600);
-  BTSerial.begin(9600); // Velocidad del HC-06
-  
-  // Configurar el sensor HC-SR04
+  // Inicializamos los pines del sensor
   pinMode(trigPin, OUTPUT);
   pinMode(echoPin, INPUT);
 
-  // Mostrar en la consola de Arduino que el sistema está listo
-  Serial.println("Sistema iniciado");
+  // Iniciamos la comunicación serial
+  Serial.begin(9600);
+  bluetooth.begin(9600);
+
+  Serial.println("Sistema de control de LEDs con sensor de distancia iniciado");
 }
 
 void loop() {
-  // Revisar si hay datos del Bluetooth
-  if (BTSerial.available()) {
-    // Leer un byte de datos del Bluetooth
-    char data = BTSerial.read();
-    Serial.print("Dato recibido: ");
-    Serial.println(data);
-
-    // Validar si el dato es un número entre 0 y 7 (caracteres '0' a '7')
-    if (data >= '0' && data <= '7') {
-      int ledIndex = data - '0'; // Convertir el carácter recibido a un número
-      Serial.print("Encendiendo LED: ");
-      Serial.println(ledIndex);
-      digitalWrite(ledPins[ledIndex], HIGH); // Encender el LED correspondiente
+  // Verificar si hay datos disponibles por Bluetooth
+  while (bluetooth.available() > 0) {
+    char c = bluetooth.read();
+    if (c == '\n' || c == '\r') {  // Aceptar '\n' o '\r'
+      processBluetoothData(receivedData);
+      receivedData = "";  // Limpiar para el siguiente mensaje
     } else {
-      Serial.println("Dato no válido recibido");
+      receivedData += c;
     }
   }
 
-  // Medir la distancia del sensor HC-SR04
+  // Leer distancia del sensor (opcional, comentado para pruebas)
+  float distancia = medirDistancia();
+  if (distancia > 0 && distancia <= UMBRAL_DISTANCIA) {
+    if (!ledsApagados) {  // Solo apaga si los LEDs no están apagados
+      apagarLEDs();
+      ledsApagados = true;  // Actualiza el estado
+      Serial.println("Objeto detectado a menos de 5 cm. Apagando LEDs.");
+      delay(2000);  // Retardo de 2 segundos
+    }
+  } else if (distancia > UMBRAL_DISTANCIA) { // Objeto lejos
+    ledsApagados = false; // Restablecer el estado para permitir encender LEDs
+  }
+}
+
+// Función para procesar datos recibidos por Bluetooth
+void processBluetoothData(String receivedData) {
+  int noteNumber = receivedData.toInt();
+  Serial.println("Número válido recibido: " + String(noteNumber));
+
+  // Validar si el número está dentro del rango esperado
+  if (noteNumber >= 0 && noteNumber <= 7) {
+    ledsApagados = false;
+    // Apagar todos los LEDs antes de encender el correcto
+    apagarLEDs();
+    Serial.println("Apagando todos los LEDs");
+
+    // Encender el LED correspondiente
+    switch (noteNumber) {
+      case 0:
+        digitalWrite(ledDO, HIGH);
+        Serial.println("Encendiendo LED DO");
+        break;
+      case 1:
+        digitalWrite(ledRE, HIGH);
+        Serial.println("Encendiendo LED RE");
+        break;
+      case 2:
+        digitalWrite(ledMI, HIGH);
+        Serial.println("Encendiendo LED MI");
+        break;
+      case 3:
+        digitalWrite(ledFA, HIGH);
+        Serial.println("Encendiendo LED FA");
+        break;
+      case 4:
+        digitalWrite(ledSOL, HIGH);
+        Serial.println("Encendiendo LED SOL");
+        break;
+      case 5:
+        digitalWrite(ledLA, HIGH);
+        Serial.println("Encendiendo LED LA");
+        break;
+      case 6:
+        digitalWrite(ledSI, HIGH);
+        Serial.println("Encendiendo LED SI");
+        break;
+      case 7:
+        digitalWrite(ledDO_otro, HIGH);
+        Serial.println("Encendiendo LED DO_otro");
+        break;
+    }
+
+    bluetooth.println("Número recibido: " + String(noteNumber));
+    delay(2000);  // Retardo de 2 segundos después de encender el LED
+  } else {
+    bluetooth.println("Número fuera de rango: " + String(noteNumber));
+    Serial.println("Número fuera de rango: " + String(noteNumber));
+  }
+}
+
+// Función para medir la distancia con el sensor HC-SR04
+float medirDistancia() {
+  // Enviar pulsos para el sensor HC-SR04
   digitalWrite(trigPin, LOW);
-  delayMicroseconds(2); // Asegúrate de que haya un pequeño retraso antes de la señal de disparo
+  delayMicroseconds(2);
   digitalWrite(trigPin, HIGH);
-  delayMicroseconds(10); // Duración del pulso de disparo
+  delayMicroseconds(10);
   digitalWrite(trigPin, LOW);
-  
-  duration = pulseIn(echoPin, HIGH);
-  distance = (duration / 2) / 29.1; // Calcular la distancia en cm
-  
-  // Mostrar la distancia en la consola para depuración
-  Serial.print("Distancia medida: ");
-  Serial.print(distance);
-  Serial.println(" cm");
 
-  // Si la distancia es menor a 5 cm, apagar todos los LEDs
-  if (distance < 5) {
-    Serial.println("Distancia menor a 5 cm, apagando LEDs...");
-    for (int i = 0; i < numLeds; i++) {
-      digitalWrite(ledPins[i], LOW); // Apagar todos los LEDs
-    }
-  }
+  long duracion = pulseIn(echoPin, HIGH);
+  float distancia = duracion * 0.0344 / 2;  // Convertir la duración en cm
+  return distancia;
+}
 
-  delay(100); // Pequeña espera antes de la siguiente lectura
+// Función para apagar todos los LEDs
+void apagarLEDs() {
+  digitalWrite(ledDO, LOW);
+  digitalWrite(ledRE, LOW);
+  digitalWrite(ledMI, LOW);
+  digitalWrite(ledFA, LOW);
+  digitalWrite(ledSOL, LOW);
+  digitalWrite(ledLA, LOW);
+  digitalWrite(ledSI, LOW);
+  digitalWrite(ledDO_otro, LOW);
 }
