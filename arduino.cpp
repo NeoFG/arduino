@@ -70,7 +70,7 @@ void processBluetoothData(String receivedData) {
 
   // Validar si el número está dentro del rango esperado
   if (noteNumber >= 0 && noteNumber <= 7) {
-    // Encender el LED correspondiente sin apagar los anteriores
+    // Solo enciende el LED si no está encendido
     if (!leds[noteNumber]) {
       leds[noteNumber] = true;  // Marcar el LED como encendido
 
@@ -115,7 +115,6 @@ void processBluetoothData(String receivedData) {
   }
 }
 
-
 // Función para medir la distancia con el sensor HC-SR04
 float medirDistancia() {
   digitalWrite(trigPin, LOW);
@@ -128,11 +127,9 @@ float medirDistancia() {
   long duracion = pulseIn(echoPin, HIGH, 30000); // Espera hasta 30 ms
   float distancia = duracion * 0.034 / 2; // Convertir a cm
 
-  if (distancia > 5)
-  {
+  if (distancia > 5) {
     return 1;
-  } 
-  else {
+  } else {
     return 0;
   }
 }
@@ -152,4 +149,6 @@ void apagarLEDs() {
   for (int i = 0; i < 8; i++) {
     leds[i] = false;
   }
+
+  Serial.println("Apagando todos los LEDs");
 }
