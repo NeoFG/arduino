@@ -54,12 +54,18 @@ void loop() {
 
   // Medir la distancia del sensor HC-SR04
   digitalWrite(trigPin, LOW);
-  delayMicroseconds(2);
+  delayMicroseconds(2); // Asegúrate de que haya un pequeño retraso antes de la señal de disparo
   digitalWrite(trigPin, HIGH);
-  delayMicroseconds(10);
+  delayMicroseconds(10); // Duración del pulso de disparo
   digitalWrite(trigPin, LOW);
+  
   duration = pulseIn(echoPin, HIGH);
   distance = (duration / 2) / 29.1; // Calcular la distancia en cm
+  
+  // Mostrar la distancia en la consola para depuración
+  Serial.print("Distancia medida: ");
+  Serial.print(distance);
+  Serial.println(" cm");
 
   // Si la distancia es menor a 5 cm, apagar todos los LEDs
   if (distance < 5) {
