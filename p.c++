@@ -21,9 +21,6 @@ const float UMBRAL_DISTANCIA = 5.0;  // Umbral de 5 cm para apagar LEDs
 
 String receivedData = "";  // Variable para almacenar datos recibidos
 
-// Variable para almacenar qué LEDs están encendidos
-bool leds[8] = {false, false, false, false, false, false, false, false};
-
 void setup() {
   // Inicializamos los pines de los LEDs
   pinMode(ledDO, OUTPUT);
@@ -60,7 +57,7 @@ void loop() {
   int distancia = medirDistancia();
 
   if (distancia == 0) {
-    apagarLEDs();
+      apagarLEDs();
   }
 }
 
@@ -70,45 +67,41 @@ void processBluetoothData(String receivedData) {
 
   // Validar si el número está dentro del rango esperado
   if (noteNumber >= 0 && noteNumber <= 7) {
-    // Encender el LED correspondiente sin apagar los anteriores
-    if (!leds[noteNumber]) {
-      leds[noteNumber] = true;  // Marcar el LED como encendido
 
-      // Encender el LED correspondiente
-      switch (noteNumber) {
-        case 0:
-          digitalWrite(ledDO, HIGH);
-          Serial.println("Encendiendo LED DO");
-          break;
-        case 1:
-          digitalWrite(ledRE, HIGH);
-          Serial.println("Encendiendo LED RE");
-          break;
-        case 2:
-          digitalWrite(ledMI, HIGH);
-          Serial.println("Encendiendo LED MI");
-          break;
-        case 3:
-          digitalWrite(ledFA, HIGH);
-          Serial.println("Encendiendo LED FA");
-          break;
-        case 4:
-          digitalWrite(ledSOL, HIGH);
-          Serial.println("Encendiendo LED SOL");
-          break;
-        case 5:
-          digitalWrite(ledLA, HIGH);
-          Serial.println("Encendiendo LED LA");
-          break;
-        case 6:
-          digitalWrite(ledSI, HIGH);
-          Serial.println("Encendiendo LED SI");
-          break;
-        case 7:
-          digitalWrite(ledDO_otro, HIGH);
-          Serial.println("Encendiendo LED DO_otro");
-          break;
-      }
+    // Encender el LED correspondiente
+    switch (noteNumber) {
+      case 0:
+        digitalWrite(ledDO, HIGH);
+        Serial.println("Encendiendo LED DO");
+        break;
+      case 1:
+        digitalWrite(ledRE, HIGH);
+        Serial.println("Encendiendo LED RE");
+        break;
+      case 2:
+        digitalWrite(ledMI, HIGH);
+        Serial.println("Encendiendo LED MI");
+        break;
+      case 3:
+        digitalWrite(ledFA, HIGH);
+        Serial.println("Encendiendo LED FA");
+        break;
+      case 4:
+        digitalWrite(ledSOL, HIGH);
+        Serial.println("Encendiendo LED SOL");
+        break;
+      case 5:
+        digitalWrite(ledLA, HIGH);
+        Serial.println("Encendiendo LED LA");
+        break;
+      case 6:
+        digitalWrite(ledSI, HIGH);
+        Serial.println("Encendiendo LED SI");
+        break;
+      case 7:
+        digitalWrite(ledDO_otro, HIGH);
+        Serial.println("Encendiendo LED DO_otro");
+        break;
     }
   } else {
     bluetooth.println("Número fuera de rango: " + String(noteNumber));
@@ -137,6 +130,7 @@ float medirDistancia() {
   }
 }
 
+
 // Función para apagar todos los LEDs
 void apagarLEDs() {
   digitalWrite(ledDO, LOW);
@@ -147,9 +141,4 @@ void apagarLEDs() {
   digitalWrite(ledLA, LOW);
   digitalWrite(ledSI, LOW);
   digitalWrite(ledDO_otro, LOW);
-
-  // Marcar todos los LEDs como apagados
-  for (int i = 0; i < 8; i++) {
-    leds[i] = false;
-  }
 }
